@@ -14,6 +14,8 @@ public class DiceCalculator {
         return res;
     }
 
+    public static int CRITIQUE = 9999999;
+
     public static int jetToucher (int bonus) {
         Random random = new Random();
 
@@ -21,7 +23,7 @@ public class DiceCalculator {
 
         // critique, touche automatique (interprété ici par un resultat immense)
         if(res == 20){
-            return 9999999;
+            return DiceCalculator.CRITIQUE;
         }
 
         return res + bonus;

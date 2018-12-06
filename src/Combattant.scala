@@ -1,6 +1,6 @@
 import scala.math.sqrt
 
-class Combattant(val name : String, var pvActuel : Int, val pvMax : Int, val AC : Int, var positionX : Float, var positionY : Float, var positionZ : Float, val speed : Float, val msgRetenu : MessageChoixAction) extends Serializable {
+class Combattant(val name : String, var pvActuel : Int, val pvMax : Int, val AC : Int, var positionX : Float, var positionY : Float, var positionZ : Float, val speed : Float, val msgsRetenu : Array[MessageChoixAction]) extends Serializable {
 
   // retourne le vecteur de déplacement qui doit être appliqué au combattant pour le rapprocher de sa cible
   def moveToward(combattant: Combattant): (Float, Float, Float) = {
@@ -10,9 +10,15 @@ class Combattant(val name : String, var pvActuel : Int, val pvMax : Int, val AC 
 
     val norme = sqrt(dx*dx + dy*dy + dz*dz).asInstanceOf[Float]
 
-    dx = (dx / norme) * speed
-    dy = (dy / norme) * speed
-    dz = (dz / norme) * speed
+    var usefullSpeed : Float = speed
+
+    if(speed > norme){
+      usefullSpeed = norme
+    }
+
+    dx = (dx / norme) * usefullSpeed
+    dy = (dy / norme) * usefullSpeed
+    dz = (dz / norme) * usefullSpeed
 
     (dx,dy, dz)
   }

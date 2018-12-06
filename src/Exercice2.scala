@@ -3,7 +3,7 @@ import org.apache.spark.graphx._
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.math.sqrt
-
+/*
 object Exercice2 extends App
 {
   val conf = new SparkConf().setAppName("Exercice2").setMaster("local[*]")
@@ -272,3 +272,4 @@ object Exercice2 extends App
   exercice2()
 
 }
+*/

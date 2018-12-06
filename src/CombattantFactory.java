@@ -1,7 +1,7 @@
 public class CombattantFactory {
 
-    public static Combattant copyCombattantWithMsg (Combattant original, MessageChoixAction msg) {
-        return new Combattant(original.name(), original.pvActuel(), original.pvMax(), original.AC(), original.positionX(), original.positionY(), original.positionZ(), original.speed(), msg);
+    public static Combattant copyCombattantWithMsg (Combattant original, MessageChoixAction[] msgs) {
+        return new Combattant(original.name(), original.pvActuel(), original.pvMax(), original.AC(), original.positionX(), original.positionY(), original.positionZ(), original.speed(), msgs);
     }
 
     public static Combattant copyCombattant (Combattant original) {

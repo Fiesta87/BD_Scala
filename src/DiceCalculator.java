@@ -13,4 +13,17 @@ public class DiceCalculator {
 
         return res;
     }
+
+    public static int jetToucher (int bonus) {
+        Random random = new Random();
+
+        int res = random.nextInt(20) + 1;
+
+        // critique, touche automatique (interprété ici par un resultat immense)
+        if(res == 20){
+            return 9999999;
+        }
+
+        return res + bonus;
+    }
 }

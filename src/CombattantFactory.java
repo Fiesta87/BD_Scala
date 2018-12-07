@@ -1,4 +1,12 @@
+import java.util.Random;
+
 public class CombattantFactory {
+
+    private static Random random = new Random();
+
+    private static float addRandom(float range) {
+        return (random.nextFloat() * 2.0f - 1.0f) * range;
+    }
 
     public static Combattant copyCombattantWithMsg (Combattant original, MessageChoixAction[] msgs) {
         return new Combattant(original.name(), original.pvActuel(), original.pvMax(), original.AC(), original.positionX(), original.positionY(), original.positionZ(), original.speed(), msgs, original.attaques(), original.spells(), Status.VIVANT(),0, original.SR(), original.DR(), original.Reflex(), original.Will());
@@ -19,19 +27,19 @@ public class CombattantFactory {
     }
 
     public static Combattant makeOrcWorgRider () {
-        Combattant OrcWorgRider = new Combattant(Combattant.ORC_WORG_RIDER(), 13, 13, 18, 110, 0, 0, 20, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,0,2,1);
+        Combattant OrcWorgRider = new Combattant(Combattant.ORC_WORG_RIDER(), 13, 13, 18, 110 + addRandom(10.0f), 0, 0 + addRandom(50.0f), 20, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,0,2,1);
         OrcWorgRider.addAttaque(new Attaque(Attaque.BATTLE_AXE(), 2,1,8,new int[]{6}, 10.0f));
         return OrcWorgRider;
     }
 
     public static Combattant makeOrcBrutalWarlord () {
-        Combattant OrcBrutalWarlord =  new Combattant(Combattant.ORC_BRUTAL_WARLORD(), 141, 141, 27, 130, 0, 0, 30, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,0,9,8);
+        Combattant OrcBrutalWarlord =  new Combattant(Combattant.ORC_BRUTAL_WARLORD(), 141, 141, 27, 130 + addRandom(10.0f), 0, 0 + addRandom(50.0f), 30, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,0,9,8);
         OrcBrutalWarlord.addAttaque(new Attaque(Attaque.VICIOUS_FLAIL(), 10,1,8,new int[]{20,15,10}, 10.0f));
         return OrcBrutalWarlord;
     }
 
     public static Combattant makeOrcDoubleAxeFury () {
-        Combattant OrcDoubleAxeFury = new Combattant(Combattant.ORC_DOUBLE_AXE_FURY(), 142, 142, 17, 120, 0, 0, 40, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,3,9,9);
+        Combattant OrcDoubleAxeFury = new Combattant(Combattant.ORC_DOUBLE_AXE_FURY(), 142, 142, 17, 120 + addRandom(10.0f), 0, 0 + addRandom(50.0f), 40, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,3,9,9);
         OrcDoubleAxeFury.addAttaque(new Attaque(Attaque.DOUBLE_AXE(), 10,1,8,new int[]{19,14,9}, 10.0f));
         return OrcDoubleAxeFury;
     }

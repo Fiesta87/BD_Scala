@@ -1,7 +1,11 @@
 public class MessageFactory {
 
     public static MessageChoixAction makeMessageChoixAction (float distance, String action, long cible) {
-        return new MessageChoixAction(distance, action, cible);
+        return new MessageChoixAction(distance, action, cible, "");
+    }
+
+    public static MessageChoixAction makeMessageChoixAction (float distance, String action, long cible, String extraInfo) {
+        return new MessageChoixAction(distance, action, cible, extraInfo);
     }
 
     public static MessageRealisationAction makeMessageRealisationAction (String action, String combattant, long idCombattant, float valeur1) {

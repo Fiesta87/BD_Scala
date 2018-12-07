@@ -16,9 +16,7 @@ object Exercice2combat1 extends App
 
     println("Populating armies")
 
-    val ANGEL_SOLAR = "Angel Solar"
-
-    var vertexArray = Array((0L, CombattantFactory.makeSolar()))
+    var vertexArray = Array((0L, CombattantFactory.makeAngelSolar()))
 
     val ALLY = "ALLY"
     val FOE = "FOE"
@@ -27,8 +25,6 @@ object Exercice2combat1 extends App
 
     edgeArray = edgeArray :+ Edge(0L, 0L, MY_SELF)
 
-    val ORC_WORG_RIDER = "Orc Worg Rider"
-
     for( i <- 1L to 9L){
       vertexArray = vertexArray :+ (i, CombattantFactory.makeOrcWorgRider())
       edgeArray = edgeArray :+ Edge(0L, i, FOE)
@@ -36,14 +32,10 @@ object Exercice2combat1 extends App
       edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
     }
 
-    val ORC_BRUTAL_WARLORD = "Orc Brutal Warlord"
-
     vertexArray = vertexArray :+ (10L, CombattantFactory.makeOrcBrutalWarlord())
     edgeArray = edgeArray :+ Edge(0L, 10L, FOE)
     edgeArray = edgeArray :+ Edge(10L, 0L, FOE)
     edgeArray = edgeArray :+ Edge(10L, 10L, MY_SELF)
-
-    val ORC_DOUBLE_AXE_FURY = "Orc Double Axe Fury"
 
     for( i <- 11L to 14L){
       vertexArray = vertexArray :+ (i, CombattantFactory.makeOrcDoubleAxeFury())
@@ -72,10 +64,13 @@ object Exercice2combat1 extends App
 
           val distance = calculeDistance(ctx.srcAttr, ctx.dstAttr)
 
-          if(ctx.srcAttr.name == ANGEL_SOLAR) {
+          if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR) {
 
-            if(distance <= 110){
-              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId)))
+            if(distance <= 10){
+              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.GREAT_SWORD)))
+            }
+            else if(distance <= 110){
+              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.LONG_BOW)))
             }
           }
 
@@ -86,7 +81,16 @@ object Exercice2combat1 extends App
             }
 
             else {
-              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId)))
+
+              if(ctx.srcAttr.name == Combattant.ORC_WORG_RIDER){
+                ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.BATTLE_AXE)))
+              }
+              else if(ctx.srcAttr.name == Combattant.ORC_DOUBLE_AXE_FURY){
+                ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.DOUBLE_AXE)))
+              }
+              else if(ctx.srcAttr.name == Combattant.ORC_BRUTAL_WARLORD){
+                ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.VICIOUS_FLAIL)))
+              }
             }
           }
         }
@@ -98,7 +102,7 @@ object Exercice2combat1 extends App
 
         else if(ctx.attr == MY_SELF) {
 
-          if(ctx.srcAttr.name == ANGEL_SOLAR) {
+          if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR) {
 
             ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_REGENERATION, ctx.srcId)))
           }
@@ -341,7 +345,7 @@ object Exercice2combat1 extends App
         if(msg != null && msg.action == ACTION_REGENERATION && msg.cible == ctx.dstId) {
 
           // seul le solar est capable de se régénérer
-          if(ctx.srcAttr.name == ANGEL_SOLAR) {
+          if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR) {
             ctx.sendToSrc(Array(MessageFactory.makeMessageRealisationAction(ACTION_REGENERATION, ctx.srcAttr.name, ctx.srcId, 15)))
           }
         }
@@ -350,137 +354,7 @@ object Exercice2combat1 extends App
       // si on a retenu une ou plusieurs attaques
       if(plusHautePrioriteAction == ACTION_ATTAQUER){
 
-        // si on est le angel solar
-        if(ctx.srcAttr.name == ANGEL_SOLAR) {
-
-          // max 4 attaques
-          val nbAttaqueMax : Int = 4
-          var nbAttaqueDone : Int = 0
-
-          // tant qu'on a pas fait les 4 attaques
-          while(nbAttaqueDone < nbAttaqueMax){
-
-            // pour chaque ennemi attaquable
-            ctx.srcAttr.msgsRetenu.foreach(msg => {
-
-              // si le message est bien une attaque et pas une régénération
-              if(msg != null && msg.action == ACTION_ATTAQUER){
-
-                // si on a pas dépassé le nombre d'attaque max
-                if(nbAttaqueDone < nbAttaqueMax){
-
-                  // et que la l'ennemie traité est celui de cet arc du graphe
-                  if(msg.cible == ctx.dstId) {
-
-                    // on attaque soit au CàC soit à distance avec une diminution de notre bonus pour toucher au fur et à mesure des attaques
-
-                    if(msg.distance <= 10) {  // attaque au CàC avec greatsword
-
-                      var toucheValeur : Int = 0
-                      if(nbAttaqueDone == 0)      toucheValeur = DiceCalculator.jetToucher(35)
-                      else if(nbAttaqueDone == 1) toucheValeur = DiceCalculator.jetToucher(30)
-                      else if(nbAttaqueDone == 2) toucheValeur = DiceCalculator.jetToucher(25)
-                      else if(nbAttaqueDone == 3) toucheValeur = DiceCalculator.jetToucher(20)
-
-                      ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, DiceCalculator._x_Dy_plus_z_(3, 6, 18))))
-
-                    } else if(msg.distance <= 110) {  // attaque à distance avec Arc
-
-                      var toucheValeur : Int = 0
-                      if(nbAttaqueDone == 0)      toucheValeur = DiceCalculator.jetToucher(31)
-                      else if(nbAttaqueDone == 1) toucheValeur = DiceCalculator.jetToucher(26)
-                      else if(nbAttaqueDone == 2) toucheValeur = DiceCalculator.jetToucher(21)
-                      else if(nbAttaqueDone == 3) toucheValeur = DiceCalculator.jetToucher(16)
-
-                      ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, DiceCalculator._x_Dy_plus_z_(2, 6, 14))))
-                    }
-                  }
-
-                  nbAttaqueDone = nbAttaqueDone + 1
-                }
-              }
-            })
-          }
-        }
-
-        // cet orc n'a qu'une seule attaque et pas de régénération
-        else if(ctx.srcAttr.name == ORC_WORG_RIDER) {
-
-          // si l'ennemie le plus proche est celui de cet arc du graphe
-          if(ctx.srcAttr.msgsRetenu(0).cible == ctx.dstId) {
-            ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, DiceCalculator.jetToucher(6), DiceCalculator._x_Dy_plus_z_(1, 8, 2))))
-          }
-        }
-
-        // cet orc a 3 attaques et pas de régénération
-        else if(ctx.srcAttr.name == ORC_BRUTAL_WARLORD) {
-
-          // max 3 attaques
-          val nbAttaqueMax : Int = 3
-          var nbAttaqueDone : Int = 0
-
-          // tant qu'on a pas fait les 3 attaques
-          while(nbAttaqueDone < nbAttaqueMax){
-
-            // pour chaque ennemi attaquable
-            ctx.srcAttr.msgsRetenu.foreach(msg => {
-
-              // si on a pas dépassé le nombre d'attaque max
-              if(msg != null && nbAttaqueDone < nbAttaqueMax){
-
-                // et que la l'ennemie traité est celui de cet arc du graphe
-                if(msg.cible == ctx.dstId) {
-
-                  // on attaque au CàC avec une diminution de notre bonus pour toucher au fur et à mesure des attaques
-
-                  var toucheValeur : Int = 0
-                  if(nbAttaqueDone == 0)      toucheValeur = DiceCalculator.jetToucher(20)
-                  else if(nbAttaqueDone == 1) toucheValeur = DiceCalculator.jetToucher(15)
-                  else if(nbAttaqueDone == 2) toucheValeur = DiceCalculator.jetToucher(10)
-
-                  ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, DiceCalculator._x_Dy_plus_z_(1, 8, 10))))
-                }
-
-                nbAttaqueDone = nbAttaqueDone + 1
-              }
-            })
-          }
-        }
-
-        // cet orc a 3 attaques et pas de régénération
-        else if(ctx.srcAttr.name == ORC_DOUBLE_AXE_FURY) {
-
-          // max 3 attaques
-          val nbAttaqueMax : Int = 3
-          var nbAttaqueDone : Int = 0
-
-          // tant qu'on a pas fait les 3 attaques
-          while(nbAttaqueDone < nbAttaqueMax){
-
-            // pour chaque ennemi attaquable
-            ctx.srcAttr.msgsRetenu.foreach(msg => {
-
-              // si on a pas dépassé le nombre d'attaque max
-              if(msg != null && nbAttaqueDone < nbAttaqueMax){
-
-                // et que la l'ennemie traité est celui de cet arc du graphe
-                if(msg.cible == ctx.dstId) {
-
-                  // on attaque au CàC avec une diminution de notre bonus pour toucher au fur et à mesure des attaques
-
-                  var toucheValeur : Int = 0
-                  if(nbAttaqueDone == 0)      toucheValeur = DiceCalculator.jetToucher(19)
-                  else if(nbAttaqueDone == 1) toucheValeur = DiceCalculator.jetToucher(14)
-                  else if(nbAttaqueDone == 2) toucheValeur = DiceCalculator.jetToucher(9)
-
-                  ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, DiceCalculator._x_Dy_plus_z_(1, 8, 10))))
-                }
-
-                nbAttaqueDone = nbAttaqueDone + 1
-              }
-            })
-          }
-        }
+        attaquerEnnemie(ctx)
       }
 
       else if(plusHautePrioriteAction == ACTION_DEPLACEMENT) {
@@ -504,6 +378,50 @@ object Exercice2combat1 extends App
 
             // test de qui on est pour la valeur du heal
             ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_HEAL, ctx.srcAttr.name, ctx.srcId, 0)))
+          }
+        })
+      }
+    }
+
+    def attaquerEnnemie(ctx: EdgeContext[Combattant, String, Array[MessageRealisationAction]]) : Unit = {
+
+      var nomAttaque : String = ""
+
+      ctx.srcAttr.msgsRetenu.foreach(msg => if(msg != null && msg.action == ACTION_ATTAQUER && msg.cible == ctx.dstId) nomAttaque = msg.extraInfo)
+
+      if(nomAttaque == "") return
+
+      val attaque : Attaque = ctx.srcAttr.attaques.filter(a => a.nom == nomAttaque)(0)
+
+      // max X attaques
+      val nbAttaqueMax : Int = attaque.touches.length
+      var nbAttaqueDone : Int = 0
+
+      // tant qu'on a pas fait les X attaques
+      while(nbAttaqueDone < nbAttaqueMax){
+
+        // pour chaque ennemi attaquable
+        ctx.srcAttr.msgsRetenu.foreach(msg => {
+
+          // si le message est bien une attaque et pas une régénération
+          if(msg != null && msg.action == ACTION_ATTAQUER){
+
+            // si on a pas dépassé le nombre d'attaque max
+            if(nbAttaqueDone < nbAttaqueMax){
+
+              // et que la l'ennemie traité est celui de cet arc du graphe
+              if(msg.cible == ctx.dstId) {
+
+                // on attaque avec une diminution de notre bonus pour toucher au fur et à mesure des attaques
+
+                val toucheValeur : Int = DiceCalculator.jetToucher(attaque.touches(nbAttaqueDone))
+                val degatValeur : Int = DiceCalculator._x_Dy_plus_z_(attaque.nbDes, attaque.valeurDes, attaque.degatFixe)
+
+                ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, degatValeur)))
+              }
+
+              nbAttaqueDone = nbAttaqueDone + 1
+            }
           }
         })
       }
@@ -566,10 +484,10 @@ object Exercice2combat1 extends App
           var nbAttaquesAffichees : Int = 0
           var nbAttaquesAfficheesMax : Int = 1
 
-          if(combattant.name == ANGEL_SOLAR)          nbAttaquesAfficheesMax = 4
-          if(combattant.name == ORC_BRUTAL_WARLORD)   nbAttaquesAfficheesMax = 3
-          if(combattant.name == ORC_DOUBLE_AXE_FURY)  nbAttaquesAfficheesMax = 3
-          if(combattant.name == ORC_WORG_RIDER)       nbAttaquesAfficheesMax = 1
+          if(combattant.name == Combattant.ANGEL_SOLAR)          nbAttaquesAfficheesMax = 4
+          if(combattant.name == Combattant.ORC_BRUTAL_WARLORD)   nbAttaquesAfficheesMax = 3
+          if(combattant.name == Combattant.ORC_DOUBLE_AXE_FURY)  nbAttaquesAfficheesMax = 3
+          if(combattant.name == Combattant.ORC_WORG_RIDER)       nbAttaquesAfficheesMax = 1
 
           combattant.msgsRetenu.foreach(msg => {
             if(msg != null){

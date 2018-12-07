@@ -32,7 +32,23 @@ class Combattant(val name : String, var pvActuel : Int, val pvMax : Int, val AC 
   }
 }
 
-object Combattant{
-  val STATUS_VIVANT = "vivant"
-  val STATUS_STUNNED = "stunned"
+object Combattant {
+  val ANGEL_SOLAR = "Angel Solar"
+  val ORC_WORG_RIDER = "Orc Worg Rider"
+  val ORC_BRUTAL_WARLORD = "Orc Brutal Warlord"
+  val ORC_DOUBLE_AXE_FURY = "Orc Double Axe Fury"
+
+  val ANGEL_PLANETAR = "Angel Planetar"
+  val ANGEL_MOVANIC_DEVA = "Angel Movanic Deva"
+  val ANGEL_ASTRAL_DEVA = "Angel Astral Deva"
+  val RED_DRAGON = "Red Dragon"
+  val ORC_GREAT_AXE = "Orc Great Axe"
+  val ORC_ANGEL_SLAYER = "Orc Angel Slayer"
+}
+
+object Status {
+  val VIVANT = "vivant"
+  val MORT = "mort"
+  val STUNNED = "stunned"
+  val DEGUISE = "deguise"
 }

@@ -609,17 +609,17 @@ object Exercice2combat1 extends App
             if(msg.action == ACTION_ATTAQUER) {
 
               if(msg.valeur1 == DiceCalculator.CRITIQUE) {
-
-                println("Attaque critique de " + msg.combattant + " " + msg.idCombattant + " contre " + combattantResult.name + " " + id + " : " + msg.valeur2 + " dégâts")
-                combattantResult.pvActuel = combattantResult.pvActuel - msg.valeur2.asInstanceOf[Int]
+                val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
+                println("Attaque critique de " + msg.combattant + " " + msg.idCombattant + " contre " + combattantResult.name + " " + id + " : " + degat + " dégâts")
+                combattantResult.pvActuel = combattantResult.pvActuel - degat
                 if(combattantResult.pvActuel < 0){
                   combattantResult.pvActuel = 0
                 }
               }
               else if(msg.valeur1 >= combattantResult.AC) {
-
-                println("Attaque réussie de " + msg.combattant + " " + msg.idCombattant + " contre " + combattantResult.name + " " + id + " : " + msg.valeur2 + " dégâts")
-                combattantResult.pvActuel = combattantResult.pvActuel - msg.valeur2.asInstanceOf[Int]
+                val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
+                println("Attaque réussie de " + msg.combattant + " " + msg.idCombattant + " contre " + combattantResult.name + " " + id + " : " + degat + " dégâts")
+                combattantResult.pvActuel = combattantResult.pvActuel - degat
                 if(combattantResult.pvActuel < 0){
                   combattantResult.pvActuel = 0
                 }

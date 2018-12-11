@@ -3,22 +3,24 @@ import scala.math.sqrt
 class Combattant(val name : String, var pvActuel : Int, val pvMax : Int, val AC : Int, var positionX : Float, var positionY : Float, var positionZ : Float, val speed : Float, val msgsRetenu : Array[MessageChoixAction], var attaques: Array[Attaque], var spells: Array[Spell], var status : String, var nbTourStatus : Int , val SR : Int, val DR : Int, val Reflex : Int, val Will : Int) extends Serializable {
 
   // retourne le vecteur de déplacement qui doit être appliqué au combattant pour le rapprocher de sa cible
+  // remarque : bien q'utilisant un vecteur 3 pour la position, les combattant ne se déplacent pas sur Y
+  //            avec cette méthode mais à l'aide du système de vol
   def moveToward(combattant: Combattant): (Float, Float, Float) = {
     var dx = combattant.positionX - this.positionX
-    var dy = combattant.positionY - this.positionY
+    var dy = 0.0f // car les combattant ne volent pas via cette méthode
     var dz = combattant.positionZ - this.positionZ
 
     val norme = sqrt(dx*dx + dy*dy + dz*dz).asInstanceOf[Float]
 
-    var usefullSpeed : Float = speed
+    var usefulSpeed : Float = speed
 
     if(speed > norme){
-      usefullSpeed = norme
+      usefulSpeed = norme
     }
 
-    dx = (dx / norme) * usefullSpeed
-    dy = (dy / norme) * usefullSpeed
-    dz = (dz / norme) * usefullSpeed
+    dx = (dx / norme) * usefulSpeed
+    dy = (dy / norme) * usefulSpeed
+    dz = (dz / norme) * usefulSpeed
 
     (dx,dy, dz)
   }

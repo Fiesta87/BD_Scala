@@ -9,10 +9,10 @@ object Exercice1 extends App {
   def exercice1() : Unit = {
 
     // get the data
-    val rdd = sc.parallelize(CreatureCrawler.getCreatures().toArray());
+    val creatures = sc.parallelize(CreatureCrawler.getCreatures().toArray());
 
     // set each spell as a key and the creature as the value
-    val rdd2 = rdd.map(c => {
+    val pairsSpellCreature = creatures.flatMap(c => {
 
       val name = c.asInstanceOf[Creature].name
       var result : List[(String,String)] = List()
@@ -22,14 +22,10 @@ object Exercice1 extends App {
       })
 
       result
-
     })
 
-    // used to flatten the RDD (remove the List aspect created at the previous step)
-    val rdd3 = rdd2.flatMap( c => c)
-
-    // reduce by key to group monster in a single string, also remove duplicate
-    val rdd4 = rdd3.reduceByKey((val1, val2) => {
+    // reduce by key to group creatures in a single string, also remove duplicate
+    val listCreaturesParSpell = pairsSpellCreature.reduceByKey((val1, val2) => {
 
       var toAdd = ""
 
@@ -40,8 +36,10 @@ object Exercice1 extends App {
       val1 + toAdd
     })
 
-    // print result
-    rdd4.collect().foreach(println)
+    // print result in a nice way
+    listCreaturesParSpell.collect().foreach(record => {
+      println("Spell : " + Console.CYAN + Console.BOLD + record._1 + Console.WHITE + ", Creatures : " + Console.MAGENTA + Console.BOLD + record._2 + Console.WHITE)
+    })
   }
 
   exercice1()

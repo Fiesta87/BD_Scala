@@ -29,8 +29,8 @@ object Exercice1 extends App {
 
       var toAdd = ""
 
-      if(!val1.contains(val2)){
-        toAdd = "; " + val2
+      if(!val1.contains(val2) && !val2.contains(val1)){
+        toAdd = Console.WHITE + "; " + Console.MAGENTA + Console.BOLD + val2
       }
 
       val1 + toAdd

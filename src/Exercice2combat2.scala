@@ -96,6 +96,8 @@ object Exercice2combat2 extends App {
 
     var nbOrcGreatAxeDead : Int = 0
 
+    var nbAngelBlesses : Int = 0
+
     def sendMessagesChoixAction(ctx: EdgeContext[Combattant, String, Array[MessageChoixAction]]): Unit = {
 
       if(ctx.srcAttr.pvActuel > 0 && ctx.dstAttr.pvActuel > 0){
@@ -275,7 +277,11 @@ object Exercice2combat2 extends App {
 
           else if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR) {
 
-            if(ctx.srcAttr.pvActuel < ctx.srcAttr.pvMax * 0.75) {
+            if(nbAngelBlesses >= 4 && isSpellDisponible(ctx.srcAttr, Spell.MASS_HEAL)) {
+              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_SPELL, ctx.srcId, Spell.MASS_HEAL)))
+            }
+
+            else if(ctx.srcAttr.pvActuel < ctx.srcAttr.pvMax * 0.75) {
 
               if(isSpellDisponible(ctx.srcAttr, Spell.HEAL)) {
                 ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_SPELL, ctx.srcId, Spell.HEAL)))
@@ -657,7 +663,7 @@ object Exercice2combat2 extends App {
 
         if(msg != null &&
           msg.action == ACTION_SPELL &&
-          (msg.cible == ctx.dstId || msg.extraInfo == Spell.BREATH_WEAPON && (msg.cible2 == ctx.dstId || msg.cible3 == ctx.dstId))) {
+          (msg.extraInfo == Spell.MASS_HEAL && (ctx.attr == ALLY || ctx.attr == MY_SELF) || msg.cible == ctx.dstId || msg.extraInfo == Spell.BREATH_WEAPON && (msg.cible2 == ctx.dstId || msg.cible3 == ctx.dstId))) {
 
           val nomSpell : String = msg.extraInfo
 
@@ -897,10 +903,15 @@ object Exercice2combat2 extends App {
 
       var localNbOrcGreatAxeDead : Int = 0
 
+      nbAngelBlesses = 0
+
       graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) => {
 
         if(id < 10L) {
           angels = angels :+ combattant
+          if(combattant.pvActuel <= combattant.pvMax * 0.75f) {
+            nbAngelBlesses = nbAngelBlesses + 1
+          }
         }
 
         if (affichageStatus) {

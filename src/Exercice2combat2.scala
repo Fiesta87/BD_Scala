@@ -98,6 +98,8 @@ object Exercice2combat2 extends App {
 
     var nbAngelBlesses : Int = 0
 
+    var nbHealRequisParRedDragon : Int = 0
+
     def sendMessagesChoixAction(ctx: EdgeContext[Combattant, String, Array[MessageChoixAction]]): Unit = {
 
       if(ctx.srcAttr.pvActuel > 0 && ctx.dstAttr.pvActuel > 0){
@@ -246,7 +248,7 @@ object Exercice2combat2 extends App {
 
           if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR) {
 
-            if(ctx.dstAttr.pvActuel < ctx.dstAttr.pvMax * 0.75) {
+            if(ctx.dstAttr.pvActuel < ctx.dstAttr.pvMax * 0.5) {
 
               if(isSpellDisponible(ctx.srcAttr, Spell.HEAL)) {
                 ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_SPELL, ctx.dstId, Spell.HEAL)))
@@ -255,9 +257,11 @@ object Exercice2combat2 extends App {
           }
           else if(ctx.srcAttr.name == Combattant.RED_DRAGON && ctx.dstAttr.name == Combattant.ORC_ANGEL_SLAYER) {
 
-            if(ctx.srcAttr.pvActuel < ctx.srcAttr.pvMax * 0.75) {
+            if(ctx.srcAttr.pvActuel <= ctx.srcAttr.pvMax * 0.75f) {
 
-              if(isSpellDisponible(ctx.srcAttr, Spell.CURE_MODERATE_WOUNDS)) {
+              if(isSpellDisponible(ctx.dstAttr, Spell.CURE_MODERATE_WOUNDS) && nbHealRequisParRedDragon < 3) {
+
+                nbHealRequisParRedDragon = nbHealRequisParRedDragon + 1
                 ctx.sendToDst(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_SPELL, ctx.srcId, Spell.CURE_MODERATE_WOUNDS)))
               }
             }
@@ -281,7 +285,7 @@ object Exercice2combat2 extends App {
               ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_SPELL, ctx.srcId, Spell.MASS_HEAL)))
             }
 
-            else if(ctx.srcAttr.pvActuel < ctx.srcAttr.pvMax * 0.75) {
+            else if(ctx.srcAttr.pvActuel < ctx.srcAttr.pvMax * 0.5f) {
 
               if(isSpellDisponible(ctx.srcAttr, Spell.HEAL)) {
                 ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_SPELL, ctx.srcId, Spell.HEAL)))
@@ -905,11 +909,13 @@ object Exercice2combat2 extends App {
 
       nbAngelBlesses = 0
 
+      nbHealRequisParRedDragon = 0
+
       graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) => {
 
         if(id < 10L) {
           angels = angels :+ combattant
-          if(combattant.pvActuel <= combattant.pvMax * 0.75f) {
+          if(combattant.pvActuel <= combattant.pvMax * 0.5f) {
             nbAngelBlesses = nbAngelBlesses + 1
           }
         }

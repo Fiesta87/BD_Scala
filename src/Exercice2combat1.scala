@@ -49,7 +49,6 @@ object Exercice2combat1 extends App
     var myGraph: Graph[Combattant, String] = Graph(vertexRDD, edgeRDD)
 
     val ACTION_ATTAQUER = "attaquer"
-    val ACTION_HEAL = "heal"
     val ACTION_DEPLACEMENT = "deplacement"
     val ACTION_REGENERATION = "regeneration"
 
@@ -97,7 +96,7 @@ object Exercice2combat1 extends App
 
         else if(ctx.attr == ALLY) {
 
-
+          // aucun allié dans ce combat ayant besoin d'un arc dans ce combat
         }
 
         else if(ctx.attr == MY_SELF) {
@@ -156,17 +155,12 @@ object Exercice2combat1 extends App
 
         var maxDistance : Float = 110.0f
 
-        // si l'ennemie le plus proche est à moins de 10ft, on ne peut attaquer que ceux à moins de 10ft, 6 fois au plus (car le combattant qui attaque le plus attaque 6 fois)
+        // si l'ennemie le plus proche est à moins de 10ft, on ne peut attaquer que ceux à moins de 10ft, 4 fois au plus (car le combattant qui attaque le plus attaque 4 fois)
         if(closestDistance <= 10.0f) {
           maxDistance = 10.0f
         }
 
-        var ennemieNumero1 : MessageChoixAction = null
-        var ennemieNumero2 : MessageChoixAction = null
-        var ennemieNumero3 : MessageChoixAction = null
-        var ennemieNumero4 : MessageChoixAction = null
-        var ennemieNumero5 : MessageChoixAction = null
-        var ennemieNumero6 : MessageChoixAction = null
+        val listeEnnemi : Array[MessageChoixAction] = Array(null, null, null, null)
 
         var msgsResult = Array[MessageChoixAction]()
 
@@ -179,104 +173,22 @@ object Exercice2combat1 extends App
 
           else if(msg != null && msg.action == ACTION_ATTAQUER && msg.distance <= maxDistance){
 
-            if(ennemieNumero1 == null){
-              ennemieNumero1 = msg
-            }
-            else if(msg.distance <= ennemieNumero1.distance){
+            var placeTrouvee : Boolean = false
 
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-              ennemieNumero4 = ennemieNumero3
-              ennemieNumero3 = ennemieNumero2
-              ennemieNumero2 = ennemieNumero1
-
-              ennemieNumero1 = msg
-            }
-            else if(ennemieNumero2 == null){
-              ennemieNumero2 = msg
-            }
-            else if(msg.distance <= ennemieNumero2.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-              ennemieNumero4 = ennemieNumero3
-              ennemieNumero3 = ennemieNumero2
-
-              ennemieNumero2 = msg
-            }
-            else if(ennemieNumero3 == null){
-              ennemieNumero3 = msg
-            }
-            else if(msg.distance <= ennemieNumero3.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-              ennemieNumero4 = ennemieNumero3
-
-              ennemieNumero3 = msg
-            }
-            else if(ennemieNumero4 == null){
-              ennemieNumero4 = msg
-            }
-            else if(msg.distance <= ennemieNumero4.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-
-              ennemieNumero4 = msg
-            }
-            else if(ennemieNumero5 == null){
-              ennemieNumero5 = msg
-            }
-            else if(msg.distance <= ennemieNumero5.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-
-              ennemieNumero5 = msg
-            }
-            else if(ennemieNumero6 == null){
-              ennemieNumero6 = msg
-            }
-            else if(msg.distance <= ennemieNumero6.distance){
-
-              ennemieNumero6 = msg
+            for(i <- listeEnnemi.indices){
+              if( ! placeTrouvee && (listeEnnemi(i) == null || msg.distance <= listeEnnemi(i).distance)) {
+                for(j <- listeEnnemi.length-1 to i+1 by -1){
+                  listeEnnemi(j) = listeEnnemi(j-1)
+                }
+                listeEnnemi(i) = msg
+                placeTrouvee = true
+              }
             }
           }
         })
 
         // on retrourne les régénérations et les attaques sélectionnées
-        return msgsResult ++ Array[MessageChoixAction](ennemieNumero1, ennemieNumero2, ennemieNumero3, ennemieNumero4, ennemieNumero5, ennemieNumero6)
-      }
-      // si le plus important est de heal, on heal le plus proche
-      else if(plusHautePrioriteAction == ACTION_HEAL) {
-
-        // on cherche la distance vers la cible la plus proche
-        val closestDistance : Float = getClosestDistance(msgsMerged, ACTION_HEAL)
-
-        var msgsResult = Array[MessageChoixAction]()
-
-        // on ne healera qu'une seule fois
-        var healChoisit : Boolean = false
-
-        msgsMerged.foreach(msg => {
-
-          // on stack toujours les régénération
-          if(msg.action == ACTION_REGENERATION) {
-            msgsResult = msgsResult :+ msg
-          }
-
-          if(msg.action == ACTION_HEAL && msg.distance == closestDistance && ! healChoisit) {
-            healChoisit = true
-            msgsResult = msgsResult :+ msg
-          }
-        })
-
-        return msgsResult
+        return msgsResult ++ listeEnnemi
       }
 
       // retour par défaut qui ne sera jamais exécuté mais permet de compiler
@@ -315,15 +227,11 @@ object Exercice2combat1 extends App
           // nothing to do
         }
 
-        else if(msg.action == ACTION_HEAL) {
-          plusHautePrioriteAction = ACTION_HEAL
-        }
-
-        else if(plusHautePrioriteAction != ACTION_HEAL && msg.action == ACTION_ATTAQUER) {
+        else if(msg.action == ACTION_ATTAQUER) {
           plusHautePrioriteAction = ACTION_ATTAQUER
         }
 
-        else if(plusHautePrioriteAction != ACTION_HEAL && plusHautePrioriteAction != ACTION_ATTAQUER && msg.action == ACTION_DEPLACEMENT) {
+        else if(plusHautePrioriteAction != ACTION_ATTAQUER && msg.action == ACTION_DEPLACEMENT) {
           plusHautePrioriteAction = ACTION_DEPLACEMENT
         }
       })
@@ -369,18 +277,6 @@ object Exercice2combat1 extends App
           }
         })
       }
-
-      else if(plusHautePrioriteAction == ACTION_HEAL) {
-
-        ctx.srcAttr.msgsRetenu.foreach(msg => {
-
-          if(msg != null && msg.action == ACTION_HEAL && msg.cible == ctx.dstId) {
-
-            // test de qui on est pour la valeur du heal
-            ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_HEAL, ctx.srcAttr.name, ctx.srcId, 0)))
-          }
-        })
-      }
     }
 
     def attaquerEnnemie(ctx: EdgeContext[Combattant, String, Array[MessageRealisationAction]]) : Unit = {
@@ -420,7 +316,7 @@ object Exercice2combat1 extends App
                 ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, degatValeur, attaque.nom)))
               }
 
-              nbAttaqueDone = nbAttaqueDone + 1
+              nbAttaqueDone += 1
             }
           }
         })
@@ -438,7 +334,7 @@ object Exercice2combat1 extends App
 
       var affichageEnVie = true
 
-      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) => {
+      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) =>
 
         if(affichageStatus){
           affichageStatus = false
@@ -456,11 +352,11 @@ object Exercice2combat1 extends App
 
           println("  - " + Console.BLUE + Console.BOLD + combattant.name + " " + id + Console.WHITE + " : " + Console.GREEN + Console.BOLD + combattant.pvActuel + "/" + combattant.pvMax + " PV" + Console.WHITE + ", position : (" + combattant.positionX + ", " + combattant.positionY + ", " + combattant.positionZ + ")")
         }
-      }}
+      }
 
       var affichageMort = true
 
-      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) => {
+      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) =>
 
         if(combattant.pvActuel <= 0){
 
@@ -472,7 +368,7 @@ object Exercice2combat1 extends App
 
           println("  - " + Console.RED + Console.BOLD + combattant.name + " " + id + Console.WHITE)
         }
-      }}
+      }
     }
 
     afficherStatus(myGraph)
@@ -509,14 +405,12 @@ object Exercice2combat1 extends App
       myGraph = myGraph.joinVertices(messagesChoixActions)(
         (id, combattant, msgsRetenu) => {
 
-          val combattantResult = CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
-
-          combattantResult
+          CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
         })
 
       var affichageChoixActions = true
 
-      myGraph.vertices.collect.foreach { case (id, combattant: Combattant) => {
+      myGraph.vertices.collect.foreach { case (id, combattant: Combattant) =>
 
         if(affichageChoixActions){
           affichageChoixActions = false
@@ -540,7 +434,7 @@ object Exercice2combat1 extends App
 
               if(msg.action == ACTION_ATTAQUER){
                 if(nbAttaquesAffichees < nbAttaquesAfficheesMax){
-                  nbAttaquesAffichees = nbAttaquesAffichees + 1
+                  nbAttaquesAffichees += 1
                   println("  - " + msg.action + ", cible : " + msg.cible)
                 }
               }
@@ -551,7 +445,7 @@ object Exercice2combat1 extends App
           })
           println("")
         }
-      }}
+      }
 
       println("")
       println("****************** Actions réalisées ******************")
@@ -581,7 +475,7 @@ object Exercice2combat1 extends App
               if(msg.valeur1 == DiceCalculator.CRITIQUE) {
                 val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
                 println("Attaque critique de " + nameCombattantMsg + " avec " + arme +  " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel = combattantResult.pvActuel - degat
+                combattantResult.pvActuel -= degat
                 if(combattantResult.pvActuel < 0){
                   combattantResult.pvActuel = 0
                 }
@@ -589,7 +483,7 @@ object Exercice2combat1 extends App
               else if(msg.valeur1 >= combattantResult.AC) {
                 val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
                 println("Attaque réussie de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel = combattantResult.pvActuel - degat
+                combattantResult.pvActuel -= degat
                 if(combattantResult.pvActuel < 0){
                   combattantResult.pvActuel = 0
                 }
@@ -598,27 +492,18 @@ object Exercice2combat1 extends App
               }
             }
 
-            else if(msg.action == ACTION_HEAL) {
-
-              println("Heal de " + nameCombattantMsg + " pour " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-              combattantResult.pvActuel = combattantResult.pvActuel + msg.valeur1.asInstanceOf[Int]
-              if(combattantResult.pvActuel > combattantResult.pvMax){
-                combattantResult.pvActuel = combattantResult.pvMax
-              }
-            }
-
             else if(msg.action == ACTION_DEPLACEMENT) {
 
               println("Déplacement de " + nameCombattantResult + " vers " + nameCombattantMsg + " sur une distance de " + calculeNorme(msg.valeur1, msg.valeur2, msg.valeur3))
-              combattantResult.positionX = combattantResult.positionX + msg.valeur1
-              combattantResult.positionY = combattantResult.positionY + msg.valeur2
-              combattantResult.positionZ = combattantResult.positionZ + msg.valeur3
+              combattantResult.positionX += msg.valeur1
+              combattantResult.positionY += msg.valeur2
+              combattantResult.positionZ += msg.valeur3
             }
 
             else if(msg.action == ACTION_REGENERATION) {
 
               println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-              combattantResult.pvActuel = combattantResult.pvActuel + msg.valeur1.asInstanceOf[Int]
+              combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
               if(combattantResult.pvActuel > combattantResult.pvMax){
                 combattantResult.pvActuel = combattantResult.pvMax
               }
@@ -630,7 +515,7 @@ object Exercice2combat1 extends App
 
       afficherStatus(myGraph)
       
-      tourCombat = tourCombat + 1
+      tourCombat += 1
     }
   }
 

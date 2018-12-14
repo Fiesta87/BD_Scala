@@ -375,12 +375,7 @@ object Exercice2combat2 extends App {
           maxDistance = 10.0f
         }
 
-        var ennemieNumero1 : MessageChoixAction = null
-        var ennemieNumero2 : MessageChoixAction = null
-        var ennemieNumero3 : MessageChoixAction = null
-        var ennemieNumero4 : MessageChoixAction = null
-        var ennemieNumero5 : MessageChoixAction = null
-        var ennemieNumero6 : MessageChoixAction = null
+        val listeEnnemi : Array[MessageChoixAction] = Array(null, null, null, null, null, null)
 
         var msgsResult = Array[MessageChoixAction]()
 
@@ -393,78 +388,22 @@ object Exercice2combat2 extends App {
 
           else if(msg != null && msg.action == ACTION_ATTAQUER && msg.distance <= maxDistance){
 
-            if(ennemieNumero1 == null){
-              ennemieNumero1 = msg
-            }
-            else if(msg.distance <= ennemieNumero1.distance){
+            var placeTrouvee : Boolean = false
 
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-              ennemieNumero4 = ennemieNumero3
-              ennemieNumero3 = ennemieNumero2
-              ennemieNumero2 = ennemieNumero1
-
-              ennemieNumero1 = msg
-            }
-            else if(ennemieNumero2 == null){
-              ennemieNumero2 = msg
-            }
-            else if(msg.distance <= ennemieNumero2.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-              ennemieNumero4 = ennemieNumero3
-              ennemieNumero3 = ennemieNumero2
-
-              ennemieNumero2 = msg
-            }
-            else if(ennemieNumero3 == null){
-              ennemieNumero3 = msg
-            }
-            else if(msg.distance <= ennemieNumero3.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-              ennemieNumero4 = ennemieNumero3
-
-              ennemieNumero3 = msg
-            }
-            else if(ennemieNumero4 == null){
-              ennemieNumero4 = msg
-            }
-            else if(msg.distance <= ennemieNumero4.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-              ennemieNumero5 = ennemieNumero4
-
-              ennemieNumero4 = msg
-            }
-            else if(ennemieNumero5 == null){
-              ennemieNumero5 = msg
-            }
-            else if(msg.distance <= ennemieNumero5.distance){
-
-              // on décale dans la liste
-              ennemieNumero6 = ennemieNumero5
-
-              ennemieNumero5 = msg
-            }
-            else if(ennemieNumero6 == null){
-              ennemieNumero6 = msg
-            }
-            else if(msg.distance <= ennemieNumero6.distance){
-
-              ennemieNumero6 = msg
+            for(i <- listeEnnemi.indices){
+              if( ! placeTrouvee && (listeEnnemi(i) == null || msg.distance <= listeEnnemi(i).distance)) {
+                for(j <- listeEnnemi.length-1 to i+1 by -1){
+                  listeEnnemi(j) = listeEnnemi(j-1)
+                }
+                listeEnnemi(i) = msg
+                placeTrouvee = true
+              }
             }
           }
         })
 
         // on retrourne les régénérations et les attaques sélectionnées
-        return msgsResult ++ Array[MessageChoixAction](ennemieNumero1, ennemieNumero2, ennemieNumero3, ennemieNumero4, ennemieNumero5, ennemieNumero6)
+        return msgsResult ++ listeEnnemi
       }
 
       // si le plus important est de lancer un spell
@@ -654,7 +593,7 @@ object Exercice2combat2 extends App {
                 ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_ATTAQUER, ctx.srcAttr.name, ctx.srcId, toucheValeur, degatValeur, attaque.nom)))
               }
 
-              nbAttaqueDone = nbAttaqueDone + 1
+              nbAttaqueDone += 1
             }
           }
         })
@@ -911,12 +850,12 @@ object Exercice2combat2 extends App {
 
       nbHealRequisParRedDragon = 0
 
-      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) => {
+      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) =>
 
         if(id < 10L) {
           angels = angels :+ combattant
           if(combattant.pvActuel <= combattant.pvMax * 0.5f) {
-            nbAngelBlesses = nbAngelBlesses + 1
+            nbAngelBlesses += 1
           }
         }
 
@@ -945,9 +884,8 @@ object Exercice2combat2 extends App {
         }
 
         else if(combattant.name == Combattant.ORC_GREAT_AXE) {
-          localNbOrcGreatAxeDead = localNbOrcGreatAxeDead + 1
+          localNbOrcGreatAxeDead += 1
         }
-      }
       }
 
       if(localNbOrcGreatAxeDead < 200) {
@@ -956,7 +894,7 @@ object Exercice2combat2 extends App {
 
       var affichageMort = true
 
-      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) => {
+      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) =>
 
         if (combattant.pvActuel <= 0) {
 
@@ -970,7 +908,6 @@ object Exercice2combat2 extends App {
             println("  - " + Console.RED + Console.BOLD + combattant.name + " " + id + Console.WHITE)
           }
         }
-      }
       }
 
       if(localNbOrcGreatAxeDead > 0) {
@@ -1013,56 +950,9 @@ object Exercice2combat2 extends App {
       myGraph = myGraph.joinVertices(messagesChoixActions)(
         (id, combattant, msgsRetenu) => {
 
-          val combattantResult = CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
-
-          combattantResult
+          CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
         })
 
-/*
-      var affichageChoixActions = true
-
-      myGraph.vertices.collect.foreach { case (id, combattant: Combattant) => {
-
-        if(affichageChoixActions){
-          affichageChoixActions = false
-          println("")
-          println("****************** Choix des Actions ******************")
-          println("")
-        }
-
-        if(combattant.msgsRetenu != null && combattant.name == Combattant.RED_DRAGON) {
-          println(combattant.name + " " + id + " : ")
-
-          var nbAttaquesAffichees : Int = 0
-          var nbAttaquesAfficheesMax : Int = 1
-
-          if(combattant.name == Combattant.ANGEL_SOLAR)         nbAttaquesAfficheesMax = 4
-          if(combattant.name == Combattant.ANGEL_PLANETAR)      nbAttaquesAfficheesMax = 3
-          if(combattant.name == Combattant.ANGEL_MOVANIC_DEVA)  nbAttaquesAfficheesMax = 3
-          if(combattant.name == Combattant.ANGEL_ASTRAL_DEVA)   nbAttaquesAfficheesMax = 3
-          if(combattant.name == Combattant.RED_DRAGON)          nbAttaquesAfficheesMax = 6
-          if(combattant.name == Combattant.ORC_GREAT_AXE)       nbAttaquesAfficheesMax = 1
-          if(combattant.name == Combattant.ORC_ANGEL_SLAYER)    nbAttaquesAfficheesMax = 6
-
-
-          combattant.msgsRetenu.foreach(msg => {
-            if(msg != null){
-
-              if(msg.action == ACTION_ATTAQUER){
-                if(nbAttaquesAffichees < nbAttaquesAfficheesMax){
-                  nbAttaquesAffichees = nbAttaquesAffichees + 1
-                  println("  - " + msg.action + ", cible : " + msg.cible)
-                }
-              }
-              else {
-                println("  - " + msg.action + ", cible : " + msg.cible)
-              }
-            }
-          })
-          println("")
-        }
-      }}
-*/
       println("")
       println("****************** Actions réalisées ******************")
       println("")
@@ -1091,7 +981,7 @@ object Exercice2combat2 extends App {
               if(msg.valeur1 == DiceCalculator.CRITIQUE) {
                 val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
                 println("Attaque critique de " + nameCombattantMsg + " avec " + arme +  " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel = combattantResult.pvActuel - degat
+                combattantResult.pvActuel -= degat
                 if(combattantResult.pvActuel < 0){
                   combattantResult.pvActuel = 0
                 }
@@ -1099,7 +989,7 @@ object Exercice2combat2 extends App {
               else if(msg.valeur1 >= combattantResult.AC) {
                 val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
                 println("Attaque réussie de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel = combattantResult.pvActuel - degat
+                combattantResult.pvActuel -= degat
                 if(combattantResult.pvActuel < 0){
                   combattantResult.pvActuel = 0
                 }
@@ -1119,7 +1009,7 @@ object Exercice2combat2 extends App {
                   println(nameCombattantResult + " est mort avant l'arrivé du " + nomSpell + " de " + nameCombattantMsg + "...")
                 } else {
                   println(nomSpell + " de " + nameCombattantMsg + " pour " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-                  combattantResult.pvActuel = combattantResult.pvActuel + msg.valeur1.asInstanceOf[Int]
+                  combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
                   if(combattantResult.pvActuel > combattantResult.pvMax){
                     combattantResult.pvActuel = combattantResult.pvMax
                   }
@@ -1164,7 +1054,7 @@ object Exercice2combat2 extends App {
 
                   println(nameCombattantResult + " recoit " + nomSpell + " de " + nameCombattantMsg + " et subit " + Console.RED + Console.BOLD + degat + " dégats" + Console.WHITE)
 
-                  combattantResult.pvActuel = combattantResult.pvActuel - degat
+                  combattantResult.pvActuel -= degat
                   if(combattantResult.pvActuel < 0){
                     combattantResult.pvActuel = 0
                   }
@@ -1174,7 +1064,7 @@ object Exercice2combat2 extends App {
 
             else if(msg.action == ACTION_SPELL_UTILISE) {
 
-              for(i <- 0 to combattantResult.spells.length - 1) {
+              for(i <- combattantResult.spells.indices) {
 
                 if(combattantResult.spells(i).nom == msg.extraInfo && combattantResult.spells(i).disponible) {
 
@@ -1196,15 +1086,15 @@ object Exercice2combat2 extends App {
 
               if(combattantResult.name != Combattant.ORC_GREAT_AXE)
                 println("Déplacement de " + nameCombattantResult + " vers " + nameCombattantMsg + " sur une distance de " + calculeNorme(msg.valeur1, msg.valeur2, msg.valeur3))
-              combattantResult.positionX = combattantResult.positionX + msg.valeur1
-              combattantResult.positionY = combattantResult.positionY + msg.valeur2
-              combattantResult.positionZ = combattantResult.positionZ + msg.valeur3
+              combattantResult.positionX += msg.valeur1
+              combattantResult.positionY += msg.valeur2
+              combattantResult.positionZ += msg.valeur3
             }
 
             else if(msg.action == ACTION_REGENERATION) {
 
               println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-              combattantResult.pvActuel = combattantResult.pvActuel + msg.valeur1.asInstanceOf[Int]
+              combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
               if(combattantResult.pvActuel > combattantResult.pvMax){
                 combattantResult.pvActuel = combattantResult.pvMax
               }
@@ -1213,7 +1103,7 @@ object Exercice2combat2 extends App {
             else if(msg.action == ACTION_ENVOL) {
 
               println(Console.MAGENTA + Console.BOLD + "Envol" + Console.WHITE + " de " + nameCombattantResult)
-              combattantResult.positionY = combattantResult.positionY + 50.0f
+              combattantResult.positionY += 50.0f
             }
 
             else if(msg.action == ACTION_ATTERRI) {
@@ -1224,7 +1114,7 @@ object Exercice2combat2 extends App {
 
             else if(msg.action == ACTION_ALTERATION_ETAT_NB_TOUR_MOINS_1 && combattantResult.status == Status.STUNNED) {
 
-              combattantResult.nbTourStatus = combattantResult.nbTourStatus - 1
+              combattantResult.nbTourStatus -= 1
 
               if(combattantResult.nbTourStatus == 0){
                 combattantResult.status = Status.VIVANT
@@ -1240,7 +1130,7 @@ object Exercice2combat2 extends App {
 
       afficherStatus(myGraph)
 
-      tourCombat = tourCombat + 1
+      tourCombat += 1
     }
   }
 

@@ -9,7 +9,7 @@ object Exercice1 extends App {
   def exercice1() : Unit = {
 
     // get the data
-    val creatures = sc.parallelize(CreatureCrawler.getCreatures().toArray());
+    val creatures = sc.parallelize(CreatureCrawler.findCreatures().toArray())
 
     // set each spell as a key and the creature as the value
     val pairsSpellCreature = creatures.flatMap(c => {

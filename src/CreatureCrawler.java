@@ -3,7 +3,7 @@ import java.util.List;
 
 public class CreatureCrawler {
 
-    public static List<Creature> getCreatures () {
+    public static List<Creature> findCreatures () {
 
         System.out.println("Crawling started");
 

@@ -403,7 +403,7 @@ object Exercice2combat1 extends App
       println("")
 
       myGraph = myGraph.joinVertices(messagesChoixActions)(
-        (id, combattant, msgsRetenu) => {
+        (_, combattant, msgsRetenu) => {
 
           CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
         })

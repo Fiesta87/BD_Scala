@@ -18,7 +18,7 @@ object Exercice1 extends App {
       var result : List[(String,String)] = List()
 
       c.asInstanceOf[Creature].spells.foreach(spell => {
-        result = result :+ (spell, name)
+        result :+= (spell, name)
       })
 
       result

@@ -6,7 +6,8 @@ object Spell {
   val HEAL = "Heal"
   val MASS_HEAL = "Mass Heal"
   val FULL_ATTACK = "Full Attack"
-  val BREATH_WEAPON = "Breath weapon"
-  val POWER_WORD_STUN = "power word stun"
-  val CURE_MODERATE_WOUNDS = "cure moderate wounds"
+  val BREATH_WEAPON = "Breath Weapon"
+  val POWER_WORD_STUN = "Power Word Stun"
+  val SUMMON_DIRE_TIGER = "Summon Dire Tiger"
+  val CURE_MODERATE_WOUNDS = "Cure Moderate Wounds"
 }

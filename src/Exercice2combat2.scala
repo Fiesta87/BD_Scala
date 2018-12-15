@@ -1,3 +1,4 @@
+import org.apache.spark.graphx.PartitionStrategy.RandomVertexCut
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
@@ -12,6 +13,12 @@ object Exercice2combat2 extends App {
 
   var atLeastOneFoeRelation : Boolean = false
 
+  var summonedCombattant : Array[(Long, Combattant)] = Array[(Long, Combattant)]()
+
+  var summonedCombattantRelations : Array[Edge[String]] = Array[Edge[String]]()
+
+  var nextIdGraph : Long = 221L
+
   def exercice2combat2() : Unit = {
     println("Populating armies")
 
@@ -22,66 +29,68 @@ object Exercice2combat2 extends App {
     val MY_SELF = "MY_SELF"
     var edgeArray = Array[Edge[String]]()
 
-    edgeArray = edgeArray :+ Edge(0L, 0L, MY_SELF)
+    edgeArray :+= Edge(0L, 0L, MY_SELF)
 
     for (i <- 1l to 2L) {
       vertexArray = vertexArray :+ (i, CombattantFactory.makeAngelPlanetar())
-      edgeArray = edgeArray :+ Edge(0L, i, ALLY)
-      edgeArray = edgeArray :+ Edge(i, 0L, ALLY)
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      edgeArray :+= Edge(0L, i, ALLY)
+      edgeArray :+= Edge(i, 0L, ALLY)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
     for (i <- 3l to 4L) {
-      vertexArray = vertexArray :+ (i, CombattantFactory.makeAngelMovanicDeva())
+      vertexArray :+= (i, CombattantFactory.makeAngelMovanicDeva())
       for (y <- 0L to 2L) {
-        edgeArray = edgeArray :+ Edge(y, i, ALLY)
-        edgeArray = edgeArray :+ Edge(i, y, ALLY)
+        edgeArray :+= Edge(y, i, ALLY)
+        edgeArray :+= Edge(i, y, ALLY)
       }
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
     for (i <- 5l to 9L) {
-      vertexArray = vertexArray :+ (i, CombattantFactory.makeAngelAstralDeva())
+      vertexArray :+= (i, CombattantFactory.makeAngelAstralDeva())
       for (y <- 0L to 4L) {
-        edgeArray = edgeArray :+ Edge(y, i, ALLY)
-        edgeArray = edgeArray :+ Edge(i, y, ALLY)
+        edgeArray :+= Edge(y, i, ALLY)
+        edgeArray :+= Edge(i, y, ALLY)
       }
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
 
-    vertexArray = vertexArray :+ (10L, CombattantFactory.makeRedDragon())
-    edgeArray = edgeArray :+ Edge(10L, 10L, MY_SELF)
+    vertexArray :+= (10L, CombattantFactory.makeRedDragon())
+    edgeArray :+= Edge(10L, 10L, MY_SELF)
     for (i <- 0L to 9L) {
-      edgeArray = edgeArray :+ Edge(10L, i, FOE)
-      edgeArray = edgeArray :+ Edge(i, 10L, FOE)
+      edgeArray :+= Edge(10L, i, FOE)
+      edgeArray :+= Edge(i, 10L, FOE)
     }
 
     for (i <- 11L to 210L) {
-      vertexArray = vertexArray :+ (i, CombattantFactory.makeOrcGreatAxe())
-      edgeArray = edgeArray :+ Edge(10L, i, ALLY)
-      edgeArray = edgeArray :+ Edge(i, 10L, ALLY)
+      vertexArray :+= (i, CombattantFactory.makeOrcGreatAxe())
+      edgeArray :+= Edge(10L, i, ALLY)
+      edgeArray :+= Edge(i, 10L, ALLY)
       for (y <- 0L to 9L) {
-        edgeArray = edgeArray :+ Edge(y, i, FOE)
-        edgeArray = edgeArray :+ Edge(i, y, FOE)
+        edgeArray :+= Edge(y, i, FOE)
+        edgeArray :+= Edge(i, y, FOE)
       }
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
     for (i <- 211L to 220L) {
-      vertexArray = vertexArray :+ (i, CombattantFactory.makeOrcAngelSlayer())
-      edgeArray = edgeArray :+ Edge(10L, i, ALLY)
-      edgeArray = edgeArray :+ Edge(i, 10L, ALLY)
+      vertexArray :+= (i, CombattantFactory.makeOrcAngelSlayer())
+      edgeArray :+= Edge(10L, i, ALLY)
+      edgeArray :+= Edge(i, 10L, ALLY)
       for (y <- 0L to 9L) {
-        edgeArray = edgeArray :+ Edge(y, i, FOE)
-        edgeArray = edgeArray :+ Edge(i, y, FOE)
+        edgeArray :+= Edge(y, i, FOE)
+        edgeArray :+= Edge(i, y, FOE)
       }
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
     val vertexRDD: RDD[(Long, Combattant)] = sc.parallelize(vertexArray)
     val edgeRDD: RDD[Edge[String]] = sc.parallelize(edgeArray)
     var myGraph: Graph[Combattant, String] = Graph(vertexRDD, edgeRDD)
+
+    myGraph.cache()
 
     val ACTION_ATTAQUER = "attaquer"
     val ACTION_SPELL = "spell"
@@ -228,7 +237,7 @@ object Exercice2combat2 extends App {
             }
           }
 
-          else {
+          else if(ctx.srcAttr.name == Combattant.ORC_GREAT_AXE) {
 
             if(distance > 10) {
               ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_DEPLACEMENT, ctx.dstId)))
@@ -236,6 +245,18 @@ object Exercice2combat2 extends App {
 
             else {
               ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.GREATAXE)))
+            }
+
+          }
+
+          else if(ctx.srcAttr.name == Combattant.DIRE_TIGER) {
+
+            if(distance > 10) {
+              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_DEPLACEMENT, ctx.dstId)))
+            }
+
+            else {
+              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(distance, ACTION_ATTAQUER, ctx.dstId, Attaque.CLAWS_AND_BITE)))
             }
 
           }
@@ -305,6 +326,11 @@ object Exercice2combat2 extends App {
               
               // on atterri pour se battre au sol (on ne fait rien d'autre à ce tour)
               ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_ATTERRI, ctx.srcId)))
+
+            } else if(estAuSol(ctx.srcAttr) && nbOrcGreatAxeDead == 200 && DiceCalculator._x_Dy_plus_z_(1, 20, 0) >= 14 && isSpellDisponible(ctx.srcAttr, Spell.SUMMON_DIRE_TIGER)) {
+
+              // on summon un dire tiger
+              ctx.sendToSrc(Array(MessageFactory.makeMessageChoixAction(0.0f, ACTION_SPELL, ctx.srcId, Spell.SUMMON_DIRE_TIGER)))
             }
           }
         }
@@ -660,6 +686,10 @@ object Exercice2combat2 extends App {
 
             ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_SPELL, ctx.srcAttr.name, ctx.srcId, spell.DC, duree, spell.nom)))
 
+          } else if(spell.nom == Spell.SUMMON_DIRE_TIGER) {
+
+            ctx.sendToSrc(Array(MessageFactory.makeMessageRealisationAction(ACTION_SPELL, ctx.srcAttr.name, ctx.srcId, spell.nom)))
+
           }
 
           // redondance du test pour éviter d'envoyer le message plusieurs fois lors du BREATH_WEAPON
@@ -709,6 +739,183 @@ object Exercice2combat2 extends App {
     def combineAction(msg1: Array[MessageRealisationAction], msg2: Array[MessageRealisationAction]): Array[MessageRealisationAction] = {
 
       msg1 ++ msg2
+    }
+
+    def joinAction(id: VertexId, combattant: Combattant, msgs: Array[MessageRealisationAction]) : Combattant = {
+
+      val combattantResult = CombattantFactory.copyCombattant(combattant)
+
+      val nameCombattantResult : String = Console.BLUE + Console.BOLD + combattantResult.name + " " + id + Console.WHITE
+
+      msgs.foreach( msg => {
+
+        val nameCombattantMsg : String = Console.BLUE + Console.BOLD + msg.combattant + " " + msg.idCombattant + Console.WHITE
+
+        if(msg.action == ACTION_ATTAQUER) {
+
+          val arme : String = Console.YELLOW + Console.BOLD + msg.extraInfo + Console.WHITE
+
+          if(msg.valeur1 == DiceCalculator.CRITIQUE) {
+            val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
+            println("Attaque critique de " + nameCombattantMsg + " avec " + arme +  " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
+            combattantResult.pvActuel -= degat
+            if(combattantResult.pvActuel < 0){
+              combattantResult.pvActuel = 0
+            }
+          }
+          else if(msg.valeur1 >= combattantResult.AC) {
+            val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
+            println("Attaque réussie de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
+            combattantResult.pvActuel -= degat
+            if(combattantResult.pvActuel < 0){
+              combattantResult.pvActuel = 0
+            }
+          } else {
+            //println("Attaque ratée de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult)
+          }
+        }
+
+        else if(msg.action == ACTION_SPELL) {
+
+          val nomSpell : String = Console.CYAN + Console.BOLD + msg.extraInfo + Console.WHITE
+
+          if(msg.extraInfo == Spell.HEAL || msg.extraInfo == Spell.CURE_MODERATE_WOUNDS || msg.extraInfo == Spell.MASS_HEAL) {
+
+            // si on est déjà mort quand le heal arrive, dommage ...
+            if(combattantResult.pvActuel <= 0) {
+              println(nameCombattantResult + " est mort avant l'arrivé du " + nomSpell + " de " + nameCombattantMsg + "...")
+            } else {
+              println(nomSpell + " de " + nameCombattantMsg + " pour " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
+              combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
+              if(combattantResult.pvActuel > combattantResult.pvMax){
+                combattantResult.pvActuel = combattantResult.pvMax
+              }
+
+              if(combattantResult.status == Status.STUNNED && msg.extraInfo != Spell.CURE_MODERATE_WOUNDS) {
+                combattantResult.status = Status.VIVANT
+                combattantResult.nbTourStatus = 0
+                println("Grace au " + nomSpell + " de " + nameCombattantMsg + ", " + nameCombattantResult + " n'est plus stunned !")
+              }
+            }
+          }
+
+          else if(msg.extraInfo == Spell.POWER_WORD_STUN) {
+
+            val willSave : Int = DiceCalculator._x_Dy_plus_z_(1, 20, combattantResult.Will)
+
+            if(willSave >= msg.valeur1) {
+              println(nameCombattantResult + " réussit un will et évite " + nomSpell + " de " + nameCombattantMsg)
+            }
+
+            else {
+
+              val nbTour : Int = msg.valeur2.asInstanceOf[Int]
+              println(nameCombattantResult + " recoit " + nomSpell + " de " + nameCombattantMsg + " et est stunned pendant " + Console.RED + Console.BOLD + nbTour + " tour(s)" + Console.WHITE)
+
+              combattantResult.status = Status.STUNNED
+              combattantResult.nbTourStatus = nbTour
+            }
+          }
+
+          else if(msg.extraInfo == Spell.BREATH_WEAPON) {
+
+            val reflexeSave : Int = DiceCalculator._x_Dy_plus_z_(1, 20, combattantResult.Reflex)
+
+            if(reflexeSave >= msg.valeur1) {
+              println(nameCombattantResult + " réussit un réflexe et évite " + nomSpell + " de " + nameCombattantMsg)
+            }
+
+            else {
+
+              val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.SR)
+
+              println(nameCombattantResult + " recoit " + nomSpell + " de " + nameCombattantMsg + " et subit " + Console.RED + Console.BOLD + degat + " dégats" + Console.WHITE)
+
+              combattantResult.pvActuel -= degat
+              if(combattantResult.pvActuel < 0){
+                combattantResult.pvActuel = 0
+              }
+            }
+          }
+
+          else if(msg.extraInfo == Spell.SUMMON_DIRE_TIGER) {
+
+            summonedCombattant :+= (nextIdGraph, CombattantFactory.makeDireTiger())
+
+            for (i <- 0L to 9L) {
+              summonedCombattantRelations :+= Edge(i, nextIdGraph, FOE)
+              summonedCombattantRelations :+= Edge(nextIdGraph, i, FOE)
+            }
+            summonedCombattantRelations :+= Edge(nextIdGraph, nextIdGraph, MY_SELF)
+
+            nextIdGraph += 1
+          }
+        }
+
+        else if(msg.action == ACTION_SPELL_UTILISE) {
+
+          for(i <- combattantResult.spells.indices) {
+
+            if(combattantResult.spells(i).nom == msg.extraInfo && combattantResult.spells(i).disponible) {
+
+              if(combattantResult.spells(i).utilisationUnique) {
+                println(nameCombattantMsg + " utilise son spell " + Console.CYAN + Console.BOLD + msg.extraInfo + Console.WHITE + ", il ne peut plus l'utiliser.")
+                combattantResult.spells(i).disponible = false
+              } else {
+                println(nameCombattantMsg + " utilise son spell " + Console.CYAN + Console.BOLD + msg.extraInfo + Console.WHITE)
+              }
+
+              if(msg.extraInfo == Spell.FULL_ATTACK) {
+                combattantResult.status = Status.VIVANT
+              }
+            }
+          }
+        }
+
+        else if(msg.action == ACTION_DEPLACEMENT) {
+
+          if(combattantResult.name != Combattant.ORC_GREAT_AXE)
+            println("Déplacement de " + nameCombattantResult + " vers " + nameCombattantMsg + " sur une distance de " + calculeNorme(msg.valeur1, msg.valeur2, msg.valeur3))
+          combattantResult.positionX += msg.valeur1
+          combattantResult.positionY += msg.valeur2
+          combattantResult.positionZ += msg.valeur3
+        }
+
+        else if(msg.action == ACTION_REGENERATION) {
+
+          println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
+          combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
+          if(combattantResult.pvActuel > combattantResult.pvMax){
+            combattantResult.pvActuel = combattantResult.pvMax
+          }
+        }
+
+        else if(msg.action == ACTION_ENVOL) {
+
+          println(Console.MAGENTA + Console.BOLD + "Envol" + Console.WHITE + " de " + nameCombattantResult)
+          combattantResult.positionY += 50.0f
+        }
+
+        else if(msg.action == ACTION_ATTERRI) {
+
+          println(Console.MAGENTA + Console.BOLD + "Atterrissage" + Console.WHITE + " de " + nameCombattantResult)
+          combattantResult.positionY = 0.0f
+        }
+
+        else if(msg.action == ACTION_ALTERATION_ETAT_NB_TOUR_MOINS_1 && combattantResult.status == Status.STUNNED) {
+
+          combattantResult.nbTourStatus -= 1
+
+          if(combattantResult.nbTourStatus == 0){
+            combattantResult.status = Status.VIVANT
+            println(nameCombattantResult + " n'est plus stunned !")
+          } else {
+            println(nameCombattantResult + " est encore stunned pour " + Console.RED + Console.BOLD + combattantResult.nbTourStatus + Console.WHITE + " tour(s)")
+          }
+        }
+      })
+
+      combattantResult
     }
 
     def getPlusHautePrioriteAction(msgs : Array[MessageChoixAction]) : String = {
@@ -804,6 +1011,16 @@ object Exercice2combat2 extends App {
 
           plusHautePrioriteSpell = Spell.FULL_ATTACK
         }
+
+        else if(plusHautePrioriteSpell != Spell.MASS_HEAL &&
+          msg.extraInfo != Spell.HEAL &&
+          msg.extraInfo != Spell.POWER_WORD_STUN &&
+          msg.extraInfo != Spell.BREATH_WEAPON &&
+          msg.extraInfo != Spell.FULL_ATTACK &&
+          msg.extraInfo == Spell.SUMMON_DIRE_TIGER) {
+
+          plusHautePrioriteSpell = Spell.SUMMON_DIRE_TIGER
+        }
       })
 
       plusHautePrioriteSpell
@@ -846,6 +1063,8 @@ object Exercice2combat2 extends App {
 
       var localNbOrcGreatAxeDead : Int = 0
 
+      var localNbDireTigerDead : Int = 0
+
       nbAngelBlesses = 0
 
       nbHealRequisParRedDragon = 0
@@ -885,6 +1104,8 @@ object Exercice2combat2 extends App {
 
         else if(combattant.name == Combattant.ORC_GREAT_AXE) {
           localNbOrcGreatAxeDead += 1
+        } else if(combattant.name == Combattant.DIRE_TIGER) {
+          localNbDireTigerDead += 1
         }
       }
 
@@ -904,7 +1125,7 @@ object Exercice2combat2 extends App {
             println("Mort :")
           }
 
-          if(combattant.name != Combattant.ORC_GREAT_AXE){
+          if(combattant.name != Combattant.ORC_GREAT_AXE && combattant.name != Combattant.DIRE_TIGER){
             println("  - " + Console.RED + Console.BOLD + combattant.name + " " + id + Console.WHITE)
           }
         }
@@ -912,6 +1133,10 @@ object Exercice2combat2 extends App {
 
       if(localNbOrcGreatAxeDead > 0) {
         println("  - " + localNbOrcGreatAxeDead + " " + Console.RED + Console.BOLD + Combattant.ORC_GREAT_AXE + Console.WHITE)
+      }
+
+      if(localNbDireTigerDead > 0) {
+        println("  - " + localNbDireTigerDead + " " + Console.RED + Console.BOLD + Combattant.DIRE_TIGER + Console.WHITE)
       }
 
       nbOrcGreatAxeDead = localNbOrcGreatAxeDead
@@ -948,10 +1173,7 @@ object Exercice2combat2 extends App {
       println("#########")
 
       myGraph = myGraph.joinVertices(messagesChoixActions)(
-        (_, combattant, msgsRetenu) => {
-
-          CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
-        })
+        (_, combattant, msgsRetenu) => CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu))
 
       println("")
       println("****************** Actions réalisées ******************")
@@ -964,169 +1186,28 @@ object Exercice2combat2 extends App {
       )
 
       myGraph = myGraph.joinVertices(messagesRealisationActions)(
-        (id, combattant, msgs) => {
+        (id, combattant, msgs) => joinAction(id, combattant, msgs))
 
-          val combattantResult = CombattantFactory.copyCombattant(combattant)
+      // to force apply the modification
+      myGraph.vertices.collect()
 
-          val nameCombattantResult : String = Console.BLUE + Console.BOLD + combattantResult.name + " " + id + Console.WHITE
+      if(summonedCombattant.length > 0) {
 
-          msgs.foreach( msg => {
+        val summonedCombattantRDD : RDD[(Long, Combattant)] = sc.parallelize(summonedCombattant)
 
-            val nameCombattantMsg : String = Console.BLUE + Console.BOLD + msg.combattant + " " + msg.idCombattant + Console.WHITE
+        val summonedCombattantRelationsRDD : RDD[Edge[String]] = sc.parallelize(summonedCombattantRelations)
 
-            if(msg.action == ACTION_ATTAQUER) {
+        val myGraph2 : Graph[Combattant, String] = Graph(summonedCombattantRDD, summonedCombattantRelationsRDD)
 
-              val arme : String = Console.YELLOW + Console.BOLD + msg.extraInfo + Console.WHITE
+        myGraph = Graph(
+          myGraph.vertices.union(myGraph2.vertices),
+          myGraph.edges.union(myGraph2.edges)
+        ).partitionBy(RandomVertexCut)
 
-              if(msg.valeur1 == DiceCalculator.CRITIQUE) {
-                val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
-                println("Attaque critique de " + nameCombattantMsg + " avec " + arme +  " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel -= degat
-                if(combattantResult.pvActuel < 0){
-                  combattantResult.pvActuel = 0
-                }
-              }
-              else if(msg.valeur1 >= combattantResult.AC) {
-                val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
-                println("Attaque réussie de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel -= degat
-                if(combattantResult.pvActuel < 0){
-                  combattantResult.pvActuel = 0
-                }
-              } else {
-                //println("Attaque ratée de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult)
-              }
-            }
+        summonedCombattant = Array[(Long, Combattant)]()
 
-            else if(msg.action == ACTION_SPELL) {
-
-              val nomSpell : String = Console.CYAN + Console.BOLD + msg.extraInfo + Console.WHITE
-
-              if(msg.extraInfo == Spell.HEAL || msg.extraInfo == Spell.CURE_MODERATE_WOUNDS || msg.extraInfo == Spell.MASS_HEAL) {
-
-                // si on est déjà mort quand le heal arrive, dommage ...
-                if(combattantResult.pvActuel <= 0) {
-                  println(nameCombattantResult + " est mort avant l'arrivé du " + nomSpell + " de " + nameCombattantMsg + "...")
-                } else {
-                  println(nomSpell + " de " + nameCombattantMsg + " pour " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-                  combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
-                  if(combattantResult.pvActuel > combattantResult.pvMax){
-                    combattantResult.pvActuel = combattantResult.pvMax
-                  }
-
-                  if(combattantResult.status == Status.STUNNED && msg.extraInfo != Spell.CURE_MODERATE_WOUNDS) {
-                    combattantResult.status = Status.VIVANT
-                    combattantResult.nbTourStatus = 0
-                    println("Grace au " + nomSpell + " de " + nameCombattantMsg + ", " + nameCombattantResult + " n'est plus stunned !")
-                  }
-                }
-              }
-
-              else if(msg.extraInfo == Spell.POWER_WORD_STUN) {
-
-                val willSave : Int = DiceCalculator._x_Dy_plus_z_(1, 20, combattantResult.Will)
-
-                if(willSave >= msg.valeur1) {
-                  println(nameCombattantResult + " réussit un will et évite " + nomSpell + " de " + nameCombattantMsg)
-                }
-
-                else {
-
-                  val nbTour : Int = msg.valeur2.asInstanceOf[Int]
-                  println(nameCombattantResult + " recoit " + nomSpell + " de " + nameCombattantMsg + " et est stunned pendant " + Console.RED + Console.BOLD + nbTour + " tour(s)" + Console.WHITE)
-
-                  combattantResult.status = Status.STUNNED
-                  combattantResult.nbTourStatus = nbTour
-                }
-              }
-
-              else if(msg.extraInfo == Spell.BREATH_WEAPON) {
-
-                val reflexeSave : Int = DiceCalculator._x_Dy_plus_z_(1, 20, combattantResult.Reflex)
-
-                if(reflexeSave >= msg.valeur1) {
-                  println(nameCombattantResult + " réussit un réflexe et évite " + nomSpell + " de " + nameCombattantMsg)
-                }
-
-                else {
-
-                  val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.SR)
-
-                  println(nameCombattantResult + " recoit " + nomSpell + " de " + nameCombattantMsg + " et subit " + Console.RED + Console.BOLD + degat + " dégats" + Console.WHITE)
-
-                  combattantResult.pvActuel -= degat
-                  if(combattantResult.pvActuel < 0){
-                    combattantResult.pvActuel = 0
-                  }
-                }
-              }
-            }
-
-            else if(msg.action == ACTION_SPELL_UTILISE) {
-
-              for(i <- combattantResult.spells.indices) {
-
-                if(combattantResult.spells(i).nom == msg.extraInfo && combattantResult.spells(i).disponible) {
-
-                  if(combattantResult.spells(i).utilisationUnique) {
-                    println(nameCombattantMsg + " utilise son spell " + Console.CYAN + Console.BOLD + msg.extraInfo + Console.WHITE + ", il ne peut plus l'utiliser.")
-                    combattantResult.spells(i).disponible = false
-                  } else {
-                    println(nameCombattantMsg + " utilise son spell " + Console.CYAN + Console.BOLD + msg.extraInfo + Console.WHITE)
-                  }
-
-                  if(msg.extraInfo == Spell.FULL_ATTACK) {
-                    combattantResult.status = Status.VIVANT
-                  }
-                }
-              }
-            }
-
-            else if(msg.action == ACTION_DEPLACEMENT) {
-
-              if(combattantResult.name != Combattant.ORC_GREAT_AXE)
-                println("Déplacement de " + nameCombattantResult + " vers " + nameCombattantMsg + " sur une distance de " + calculeNorme(msg.valeur1, msg.valeur2, msg.valeur3))
-              combattantResult.positionX += msg.valeur1
-              combattantResult.positionY += msg.valeur2
-              combattantResult.positionZ += msg.valeur3
-            }
-
-            else if(msg.action == ACTION_REGENERATION) {
-
-              println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-              combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
-              if(combattantResult.pvActuel > combattantResult.pvMax){
-                combattantResult.pvActuel = combattantResult.pvMax
-              }
-            }
-
-            else if(msg.action == ACTION_ENVOL) {
-
-              println(Console.MAGENTA + Console.BOLD + "Envol" + Console.WHITE + " de " + nameCombattantResult)
-              combattantResult.positionY += 50.0f
-            }
-
-            else if(msg.action == ACTION_ATTERRI) {
-
-              println(Console.MAGENTA + Console.BOLD + "Atterrissage" + Console.WHITE + " de " + nameCombattantResult)
-              combattantResult.positionY = 0.0f
-            }
-
-            else if(msg.action == ACTION_ALTERATION_ETAT_NB_TOUR_MOINS_1 && combattantResult.status == Status.STUNNED) {
-
-              combattantResult.nbTourStatus -= 1
-
-              if(combattantResult.nbTourStatus == 0){
-                combattantResult.status = Status.VIVANT
-                println(nameCombattantResult + " n'est plus stunned !")
-              } else {
-                println(nameCombattantResult + " est encore stunned pour " + Console.RED + Console.BOLD + combattantResult.nbTourStatus + Console.WHITE + " tour(s)")
-              }
-            }
-          })
-
-          combattantResult
-        })
+        summonedCombattantRelations = Array[Edge[String]]()
+      }
 
       afficherStatus(myGraph)
 

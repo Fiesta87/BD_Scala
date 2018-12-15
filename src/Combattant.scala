@@ -26,11 +26,11 @@ class Combattant(val name : String, var pvActuel : Int, val pvMax : Int, val AC 
   }
 
   def addAttaque(attaque: Attaque): Unit ={
-    attaques = attaques :+ attaque
+    attaques :+= attaque
   }
 
   def addSpell(spell: Spell): Unit ={
-    spells = spells :+ spell
+    spells :+= spell
   }
 }
 
@@ -46,6 +46,7 @@ object Combattant {
   val RED_DRAGON = "Red Dragon"
   val ORC_GREAT_AXE = "Orc Great Axe"
   val ORC_ANGEL_SLAYER = "Orc Angel Slayer"
+  val DIRE_TIGER = "Dire Tiger"
 }
 
 object Status {

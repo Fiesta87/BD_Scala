@@ -71,6 +71,7 @@ public class CombattantFactory {
         redDragon.addSpell(new Spell(Spell.FULL_ATTACK(), 0, true, true, 0,0,0));
         redDragon.addSpell(new Spell(Spell.BREATH_WEAPON(), 33, false, true, 24,6,0));
         redDragon.addSpell(new Spell(Spell.POWER_WORD_STUN(), 24, false, true, 1,4,0));
+        redDragon.addSpell(new Spell(Spell.SUMMON_DIRE_TIGER(), 0, false, true, 0,0,0));
         return redDragon;
     }
 
@@ -86,5 +87,11 @@ public class CombattantFactory {
         angelSlayer.addAttaque(new Attaque(Attaque.COMPOSITE_LONG_BOW(),6, 1,8, new int[]{19,14,9}, 110.0f));
         angelSlayer.addSpell(new Spell(Spell.CURE_MODERATE_WOUNDS(), 0, false, true, 2,8,10));
         return angelSlayer;
+    }
+
+    public static Combattant makeDireTiger(){
+        Combattant direTiger = new Combattant(Combattant.DIRE_TIGER(), 105, 105,17,0 + addRandom(10.0f),0,0 + addRandom(10.0f),40, null, new Attaque[]{}, new Spell[]{}, Status.VIVANT(),0,0,0,11,5);
+        direTiger.addAttaque(new Attaque(Attaque.CLAWS_AND_BITE(),16, 4,8, new int[]{18,18,18}, 10.0f));
+        return direTiger;
     }
 }

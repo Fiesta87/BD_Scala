@@ -15,4 +15,5 @@ object Attaque {
   val TAIL_SLAP = "tail slap"
   val GREATAXE = "greataxe"
   val COMPOSITE_LONG_BOW = "composite long bow"
+  val CLAWS_AND_BITE = "claws and bite"
 }

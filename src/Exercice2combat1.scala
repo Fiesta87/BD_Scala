@@ -23,25 +23,25 @@ object Exercice2combat1 extends App
     val MY_SELF = "MY_SELF"
     var edgeArray = Array[Edge[String]]()
 
-    edgeArray = edgeArray :+ Edge(0L, 0L, MY_SELF)
+    edgeArray :+= Edge(0L, 0L, MY_SELF)
 
     for( i <- 1L to 9L){
-      vertexArray = vertexArray :+ (i, CombattantFactory.makeOrcWorgRider())
-      edgeArray = edgeArray :+ Edge(0L, i, FOE)
-      edgeArray = edgeArray :+ Edge(i, 0L, FOE)
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      vertexArray :+= (i, CombattantFactory.makeOrcWorgRider())
+      edgeArray :+= Edge(0L, i, FOE)
+      edgeArray :+= Edge(i, 0L, FOE)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
-    vertexArray = vertexArray :+ (10L, CombattantFactory.makeOrcBrutalWarlord())
-    edgeArray = edgeArray :+ Edge(0L, 10L, FOE)
-    edgeArray = edgeArray :+ Edge(10L, 0L, FOE)
-    edgeArray = edgeArray :+ Edge(10L, 10L, MY_SELF)
+    vertexArray :+= (10L, CombattantFactory.makeOrcBrutalWarlord())
+    edgeArray :+= Edge(0L, 10L, FOE)
+    edgeArray :+= Edge(10L, 0L, FOE)
+    edgeArray :+= Edge(10L, 10L, MY_SELF)
 
     for( i <- 11L to 14L){
-      vertexArray = vertexArray :+ (i, CombattantFactory.makeOrcDoubleAxeFury())
-      edgeArray = edgeArray :+ Edge(0L, i, FOE)
-      edgeArray = edgeArray :+ Edge(i, 0L, FOE)
-      edgeArray = edgeArray :+ Edge(i, i, MY_SELF)
+      vertexArray :+= (i, CombattantFactory.makeOrcDoubleAxeFury())
+      edgeArray :+= Edge(0L, i, FOE)
+      edgeArray :+= Edge(i, 0L, FOE)
+      edgeArray :+= Edge(i, i, MY_SELF)
     }
 
     val vertexRDD: RDD[(Long, Combattant)] = sc.parallelize(vertexArray)
@@ -328,6 +328,61 @@ object Exercice2combat1 extends App
       msg1 ++ msg2
     }
 
+    def joinAction(id: VertexId, combattant: Combattant, msgs: Array[MessageRealisationAction]) : Combattant = {
+
+      val combattantResult = CombattantFactory.copyCombattant(combattant)
+
+      val nameCombattantResult : String = Console.BLUE + Console.BOLD + combattantResult.name + " " + id + Console.WHITE
+
+      msgs.foreach( msg => {
+
+        val nameCombattantMsg : String = Console.BLUE + Console.BOLD + msg.combattant + " " + msg.idCombattant + Console.WHITE
+
+        if(msg.action == ACTION_ATTAQUER) {
+
+          val arme : String = Console.YELLOW + Console.BOLD + msg.extraInfo + Console.WHITE
+
+          if(msg.valeur1 == DiceCalculator.CRITIQUE) {
+            val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
+            println("Attaque critique de " + nameCombattantMsg + " avec " + arme +  " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
+            combattantResult.pvActuel -= degat
+            if(combattantResult.pvActuel < 0){
+              combattantResult.pvActuel = 0
+            }
+          }
+          else if(msg.valeur1 >= combattantResult.AC) {
+            val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
+            println("Attaque réussie de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
+            combattantResult.pvActuel -= degat
+            if(combattantResult.pvActuel < 0){
+              combattantResult.pvActuel = 0
+            }
+          } else {
+            println("Attaque ratée de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult)
+          }
+        }
+
+        else if(msg.action == ACTION_DEPLACEMENT) {
+
+          println("Déplacement de " + nameCombattantResult + " vers " + nameCombattantMsg + " sur une distance de " + calculeNorme(msg.valeur1, msg.valeur2, msg.valeur3))
+          combattantResult.positionX += msg.valeur1
+          combattantResult.positionY += msg.valeur2
+          combattantResult.positionZ += msg.valeur3
+        }
+
+        else if(msg.action == ACTION_REGENERATION) {
+
+          println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
+          combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
+          if(combattantResult.pvActuel > combattantResult.pvMax){
+            combattantResult.pvActuel = combattantResult.pvMax
+          }
+        }
+      })
+
+      combattantResult
+    }
+
     def afficherStatus(graphToDisplay: Graph[Combattant, String]) : Unit = {
 
       var affichageStatus = true
@@ -371,46 +426,11 @@ object Exercice2combat1 extends App
       }
     }
 
-    afficherStatus(myGraph)
-
-    println("")
-    println("Fighting")
-
-    var tourCombat = 1
-
-    while(true){
-
-      val messagesChoixActions = myGraph.aggregateMessages[Array[MessageChoixAction]](
-        sendMessagesChoixAction,
-        selectBestAction,
-        TripletFields.All
-      )
-
-      if (messagesChoixActions.isEmpty() || !atLeastOneFoeRelation) {
-        println("")
-        println("#########")
-        println("Fin du combat au tour " + (tourCombat-1))
-        println("#########")
-        return
-      }
-
-      atLeastOneFoeRelation = false
-
-      println("")
-      println("#########")
-      println("Tour " + tourCombat)
-      println("#########")
-      println("")
-
-      myGraph = myGraph.joinVertices(messagesChoixActions)(
-        (_, combattant, msgsRetenu) => {
-
-          CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu)
-        })
+    def afficherChoixAction(graphToDisplay: Graph[Combattant, String]) : Unit = {
 
       var affichageChoixActions = true
 
-      myGraph.vertices.collect.foreach { case (id, combattant: Combattant) =>
+      graphToDisplay.vertices.collect.foreach { case (id, combattant: Combattant) =>
 
         if(affichageChoixActions){
           affichageChoixActions = false
@@ -446,6 +466,43 @@ object Exercice2combat1 extends App
           println("")
         }
       }
+    }
+
+    afficherStatus(myGraph)
+
+    println("")
+    println("Fighting")
+
+    var tourCombat = 1
+
+    while(true){
+
+      val messagesChoixActions = myGraph.aggregateMessages[Array[MessageChoixAction]](
+        sendMessagesChoixAction,
+        selectBestAction,
+        TripletFields.All
+      )
+
+      if (messagesChoixActions.isEmpty() || !atLeastOneFoeRelation) {
+        println("")
+        println("#########")
+        println("Fin du combat au tour " + (tourCombat-1))
+        println("#########")
+        return
+      }
+
+      atLeastOneFoeRelation = false
+
+      println("")
+      println("#########")
+      println("Tour " + tourCombat)
+      println("#########")
+      println("")
+
+      myGraph = myGraph.joinVertices(messagesChoixActions)(
+        (_, combattant, msgsRetenu) => CombattantFactory.copyCombattantWithMsg(combattant, msgsRetenu))
+
+      afficherChoixAction(myGraph)
 
       println("")
       println("****************** Actions réalisées ******************")
@@ -458,60 +515,7 @@ object Exercice2combat1 extends App
       )
 
       myGraph = myGraph.joinVertices(messagesRealisationActions)(
-        (id, combattant, msgs) => {
-
-          val combattantResult = CombattantFactory.copyCombattant(combattant)
-
-          val nameCombattantResult : String = Console.BLUE + Console.BOLD + combattantResult.name + " " + id + Console.WHITE
-
-          msgs.foreach( msg => {
-
-            val nameCombattantMsg : String = Console.BLUE + Console.BOLD + msg.combattant + " " + msg.idCombattant + Console.WHITE
-
-            if(msg.action == ACTION_ATTAQUER) {
-
-              val arme : String = Console.YELLOW + Console.BOLD + msg.extraInfo + Console.WHITE
-
-              if(msg.valeur1 == DiceCalculator.CRITIQUE) {
-                val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
-                println("Attaque critique de " + nameCombattantMsg + " avec " + arme +  " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel -= degat
-                if(combattantResult.pvActuel < 0){
-                  combattantResult.pvActuel = 0
-                }
-              }
-              else if(msg.valeur1 >= combattantResult.AC) {
-                val degat = Math.max(0, msg.valeur2.asInstanceOf[Int] - combattantResult.DR)
-                println("Attaque réussie de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult + " : " + Console.RED + Console.BOLD + degat + " dégâts" + Console.WHITE)
-                combattantResult.pvActuel -= degat
-                if(combattantResult.pvActuel < 0){
-                  combattantResult.pvActuel = 0
-                }
-              } else {
-                println("Attaque ratée de " + nameCombattantMsg + " avec " + arme + " contre " + nameCombattantResult)
-              }
-            }
-
-            else if(msg.action == ACTION_DEPLACEMENT) {
-
-              println("Déplacement de " + nameCombattantResult + " vers " + nameCombattantMsg + " sur une distance de " + calculeNorme(msg.valeur1, msg.valeur2, msg.valeur3))
-              combattantResult.positionX += msg.valeur1
-              combattantResult.positionY += msg.valeur2
-              combattantResult.positionZ += msg.valeur3
-            }
-
-            else if(msg.action == ACTION_REGENERATION) {
-
-              println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
-              combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
-              if(combattantResult.pvActuel > combattantResult.pvMax){
-                combattantResult.pvActuel = combattantResult.pvMax
-              }
-            }
-          })
-
-          combattantResult
-        })
+        (id, combattant, msgs) => joinAction(id, combattant, msgs))
 
       afficherStatus(myGraph)
       

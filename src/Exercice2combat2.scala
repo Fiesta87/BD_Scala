@@ -100,6 +100,7 @@ object Exercice2combat2 extends App {
     val ACTION_ENVOL = "envol"
     val ACTION_ATTERRI = "atterri"
     val ACTION_ALTERATION_ETAT_NB_TOUR_MOINS_1 = "alteration"
+    val ACTION_AURA_FEU = "aura de feu"
 
     var angels : Array[Combattant] = Array()
 
@@ -519,15 +520,22 @@ object Exercice2combat2 extends App {
       // on cherche quel est le degrès de priorité le plus important
       val plusHautePrioriteAction : String = getPlusHautePrioriteAction(ctx.srcAttr.msgsRetenu)
 
+      val distance = calculeDistance(ctx.srcAttr, ctx.dstAttr)
+      if(ctx.srcAttr.name == Combattant.RED_DRAGON && ctx.attr == FOE && distance <= 10 && ctx.srcAttr.status != Status.DEGUISE && ctx.srcAttr.pvActuel > 0 && ctx.dstAttr.pvActuel > 0)
+        {
+          ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_AURA_FEU, ctx.srcAttr.name, ctx.srcId, DiceCalculator._x_Dy_plus_z_(2, 6, 0))))
+        }
       // on traite tout les messages de régénération et de tour d'altération d'état passé
       ctx.srcAttr.msgsRetenu.foreach(msg => {
+
 
         if(msg != null && msg.action == ACTION_REGENERATION && msg.cible == ctx.dstId) {
 
           // seul le solar est capable de se régénérer
-          if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR) {
+          if(ctx.srcAttr.name == Combattant.ANGEL_SOLAR && msg.action == ACTION_REGENERATION) {
             ctx.sendToSrc(Array(MessageFactory.makeMessageRealisationAction(ACTION_REGENERATION, ctx.srcAttr.name, ctx.srcId, 15)))
           }
+
         }
 
         if(msg != null && msg.action == ACTION_ALTERATION_ETAT_NB_TOUR_MOINS_1 && msg.cible == ctx.dstId) {
@@ -888,6 +896,18 @@ object Exercice2combat2 extends App {
           if(combattantResult.pvActuel > combattantResult.pvMax){
             combattantResult.pvActuel = combattantResult.pvMax
           }
+        }
+
+        else if(msg.action == ACTION_AURA_FEU) {
+
+
+
+          println(nameCombattantResult + " recoit " + ACTION_AURA_FEU +  " de " + nameCombattantMsg + " et subit " + Console.RED + Console.BOLD + msg.valeur1 + " dégats" + Console.WHITE)
+          combattantResult.pvActuel -= msg.valeur1.asInstanceOf[Int]
+          if(combattantResult.pvActuel < 0){
+            combattantResult.pvActuel = 0
+          }
+
         }
 
         else if(msg.action == ACTION_ENVOL) {

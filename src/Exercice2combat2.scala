@@ -520,14 +520,16 @@ object Exercice2combat2 extends App {
       // on cherche quel est le degrès de priorité le plus important
       val plusHautePrioriteAction : String = getPlusHautePrioriteAction(ctx.srcAttr.msgsRetenu)
 
+      // distance entre les combattants de chaque sommets
       val distance = calculeDistance(ctx.srcAttr, ctx.dstAttr)
-      if(ctx.srcAttr.name == Combattant.RED_DRAGON && ctx.attr == FOE && distance <= 10 && ctx.srcAttr.status != Status.DEGUISE && ctx.srcAttr.pvActuel > 0 && ctx.dstAttr.pvActuel > 0)
-        {
-          ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_AURA_FEU, ctx.srcAttr.name, ctx.srcId, DiceCalculator._x_Dy_plus_z_(2, 6, 0))))
-        }
+
+      // aura de feu passive du dragon
+      if(ctx.srcAttr.name == Combattant.RED_DRAGON && ctx.attr == FOE && distance <= 10 && ctx.srcAttr.status != Status.DEGUISE && ctx.srcAttr.pvActuel > 0 && ctx.dstAttr.pvActuel > 0) {
+        ctx.sendToDst(Array(MessageFactory.makeMessageRealisationAction(ACTION_AURA_FEU, ctx.srcAttr.name, ctx.srcId, DiceCalculator._x_Dy_plus_z_(2, 6, 0))))
+      }
+
       // on traite tout les messages de régénération et de tour d'altération d'état passé
       ctx.srcAttr.msgsRetenu.foreach(msg => {
-
 
         if(msg != null && msg.action == ACTION_REGENERATION && msg.cible == ctx.dstId) {
 
@@ -891,7 +893,7 @@ object Exercice2combat2 extends App {
 
         else if(msg.action == ACTION_REGENERATION) {
 
-          println("Régénération de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
+          println(Console.BOLD + "Régénération" + Console.WHITE + " de " + nameCombattantResult + " : " + Console.GREEN + Console.BOLD + "soin de " + msg.valeur1 + Console.WHITE)
           combattantResult.pvActuel += msg.valeur1.asInstanceOf[Int]
           if(combattantResult.pvActuel > combattantResult.pvMax){
             combattantResult.pvActuel = combattantResult.pvMax
@@ -900,9 +902,7 @@ object Exercice2combat2 extends App {
 
         else if(msg.action == ACTION_AURA_FEU) {
 
-
-
-          println(nameCombattantResult + " recoit " + ACTION_AURA_FEU +  " de " + nameCombattantMsg + " et subit " + Console.RED + Console.BOLD + msg.valeur1 + " dégats" + Console.WHITE)
+          println(nameCombattantResult + " recoit " + Console.BOLD + ACTION_AURA_FEU + Console.WHITE +  " de " + nameCombattantMsg + " et subit " + Console.RED + Console.BOLD + msg.valeur1 + " dégats" + Console.WHITE)
           combattantResult.pvActuel -= msg.valeur1.asInstanceOf[Int]
           if(combattantResult.pvActuel < 0){
             combattantResult.pvActuel = 0

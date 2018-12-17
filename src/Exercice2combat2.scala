@@ -86,8 +86,8 @@ object Exercice2combat2 extends App {
       edgeArray :+= Edge(i, i, MY_SELF)
     }
 
-    val vertexRDD: RDD[(Long, Combattant)] = sc.parallelize(vertexArray)
-    val edgeRDD: RDD[Edge[String]] = sc.parallelize(edgeArray)
+    val vertexRDD: RDD[(Long, Combattant)] = sc.parallelize(vertexArray).localCheckpoint()
+    val edgeRDD: RDD[Edge[String]] = sc.parallelize(edgeArray).localCheckpoint()
     var myGraph: Graph[Combattant, String] = Graph(vertexRDD, edgeRDD)
 
     myGraph.cache()

@@ -69,7 +69,7 @@ public class CombattantFactory {
         redDragon.addAttaque(new Attaque(Attaque.WINGS(),8, 2,8, new int[]{35,35}, 10.0f));
         redDragon.addAttaque(new Attaque(Attaque.TAIL_SLAP(),24, 4,6, new int[]{35}, 10.0f));
         redDragon.addSpell(new Spell(Spell.FULL_ATTACK(), 0, true, true, 0,0,0));
-        redDragon.addSpell(new Spell(Spell.BREATH_WEAPON(), 33, false, true, 24,6,0));
+        redDragon.addSpell(new Spell(Spell.BREATH_WEAPON(), 33, false, true, 24,10,0));
         redDragon.addSpell(new Spell(Spell.POWER_WORD_STUN(), 24, false, true, 1,4,0));
         redDragon.addSpell(new Spell(Spell.SUMMON_DIRE_TIGER(), 0, false, true, 0,0,0));
         return redDragon;
